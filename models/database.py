@@ -1,4 +1,4 @@
-from sqlalchemy import create_engine, Column, Integer, String, DateTime, Text, ForeignKey
+from sqlalchemy import create_engine, Column, Integer, String, DateTime, Text, ForeignKey, text
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, relationship
 import os
@@ -52,8 +52,8 @@ class Application(Base):
 def get_db():
     db = SessionLocal()
     try:
-        # Test the connection
-        db.execute("SELECT 1")
+        # Test the connection using proper SQLAlchemy text formatting
+        db.execute(text("SELECT 1"))
         yield db
     except Exception as e:
         db.rollback()
