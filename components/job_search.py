@@ -40,7 +40,8 @@ def render_job_search(jobs_df):
     # Display job listings
     st.subheader("Job Listings")
     for _, job in filtered_df.iterrows():
-        with st.expander(f"{job['title']} at {job['company']} {'(External)' if job.get('source') == 'Adzuna' else ''}"):
+        job_source = "External - Adzuna" if job.get('source') == 'Adzuna' else "Internal"
+        with st.expander(f"{job['title']} at {job['company']} ({job_source})"):
             st.write(f"**Location:** {job['location']}")
             st.write(f"**Salary Range:** {job['salary_range']}")
             st.write(f"**Posted Date:** {job['posted_date']}")
@@ -49,14 +50,15 @@ def render_job_search(jobs_df):
             st.write("**Requirements:**")
             st.write(job['requirements'])
 
-            # Only show match score for internal jobs that have been matched
-            if 'match_score' in job and pd.notna(job['match_score']):
+            # Only show match score for internal jobs
+            if job.get('source') != 'Adzuna' and 'match_score' in job and pd.notna(job['match_score']):
                 match_score = float(job['match_score'])
-                # Ensure the score is between 0 and 1
-                match_score = max(0.0, min(1.0, match_score))
+                match_score = max(0.0, min(1.0, match_score))  # Ensure score is between 0 and 1
+                st.write("**Match Score:**")
                 st.progress(match_score)
-                st.write(f"Match Score: {match_score:.2f}")
+                st.write(f"{match_score:.2%} match with your search criteria")
 
+            # Different actions for internal vs external jobs
             if job.get('source') != 'Adzuna':
                 if st.button("Apply", key=f"apply_{_}"):
                     st.success("Application submitted successfully!")
