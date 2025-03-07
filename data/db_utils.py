@@ -1,7 +1,27 @@
 from models.database import Job, Application, get_db
 from datetime import datetime
 import pandas as pd
+from sqlalchemy.exc import OperationalError
+import time
 
+def retry_on_connection_error(max_retries=3, delay=1):
+    """Decorator to retry database operations on connection errors"""
+    def decorator(func):
+        def wrapper(*args, **kwargs):
+            retries = 0
+            while retries < max_retries:
+                try:
+                    return func(*args, **kwargs)
+                except OperationalError as e:
+                    if retries == max_retries - 1:
+                        raise
+                    retries += 1
+                    time.sleep(delay)
+            return func(*args, **kwargs)
+        return wrapper
+    return decorator
+
+@retry_on_connection_error()
 def init_mock_data():
     """Initialize the database with mock data if it's empty"""
     db = next(get_db())
@@ -68,41 +88,51 @@ def init_mock_data():
         print(f"Error initializing mock data: {str(e)}")
         db.rollback()
         raise
+    finally:
+        db.close()
 
+@retry_on_connection_error()
 def get_jobs_df():
     """Get all jobs as a pandas DataFrame"""
     db = next(get_db())
-    jobs = db.query(Job).all()
+    try:
+        jobs = db.query(Job).all()
 
-    jobs_data = []
-    for job in jobs:
-        jobs_data.append({
-            "id": job.id,
-            "title": job.title,
-            "company": job.company,
-            "location": job.location,
-            "salary_range": job.salary_range,
-            "description": job.description,
-            "requirements": job.requirements,
-            "posted_date": job.posted_date.strftime('%Y-%m-%d'),
-            "status": job.status
-        })
+        jobs_data = []
+        for job in jobs:
+            jobs_data.append({
+                "id": job.id,
+                "title": job.title,
+                "company": job.company,
+                "location": job.location,
+                "salary_range": job.salary_range,
+                "description": job.description,
+                "requirements": job.requirements,
+                "posted_date": job.posted_date.strftime('%Y-%m-%d'),
+                "status": job.status
+            })
 
-    return pd.DataFrame(jobs_data) if jobs_data else pd.DataFrame()
+        return pd.DataFrame(jobs_data) if jobs_data else pd.DataFrame()
+    finally:
+        db.close()
 
+@retry_on_connection_error()
 def get_applications_df():
     """Get all applications as a pandas DataFrame"""
     db = next(get_db())
-    applications = db.query(Application).all()
+    try:
+        applications = db.query(Application).all()
 
-    applications_data = []
-    for app in applications:
-        applications_data.append({
-            "id": app.id,
-            "job_id": app.job_id,
-            "application_date": app.application_date.strftime('%Y-%m-%d'),
-            "status": app.status,
-            "notes": app.notes
-        })
+        applications_data = []
+        for app in applications:
+            applications_data.append({
+                "id": app.id,
+                "job_id": app.job_id,
+                "application_date": app.application_date.strftime('%Y-%m-%d'),
+                "status": app.status,
+                "notes": app.notes
+            })
 
-    return pd.DataFrame(applications_data) if applications_data else pd.DataFrame()
+        return pd.DataFrame(applications_data) if applications_data else pd.DataFrame()
+    finally:
+        db.close()
