@@ -4,6 +4,7 @@ from components.dashboard import render_dashboard
 from components.job_search import render_job_search
 from components.analytics import render_analytics
 from components.application_history import render_application_history
+from components.resume_matching import render_resume_matching
 
 # Page configuration
 st.set_page_config(
@@ -25,7 +26,7 @@ if 'applications_df' not in st.session_state:
 st.sidebar.title("Navigation")
 page = st.sidebar.radio(
     "Go to",
-    ["Dashboard", "Job Search", "Applications History", "Analytics"]
+    ["Dashboard", "Job Search", "Resume Matcher", "Applications History", "Analytics"]
 )
 
 # Main content
@@ -35,6 +36,8 @@ if page == "Dashboard":
     render_dashboard(st.session_state.applications_df, st.session_state.jobs_df)
 elif page == "Job Search":
     render_job_search(st.session_state.jobs_df)
+elif page == "Resume Matcher":
+    render_resume_matching(st.session_state.jobs_df)
 elif page == "Applications History":
     render_application_history(st.session_state.applications_df, st.session_state.jobs_df)
 else:
