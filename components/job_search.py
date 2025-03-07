@@ -49,9 +49,13 @@ def render_job_search(jobs_df):
             st.write("**Requirements:**")
             st.write(job['requirements'])
 
-            if 'match_score' in job:
-                st.progress(float(job['match_score']))
-                st.write(f"Match Score: {job['match_score']:.2f}")
+            # Only show match score for internal jobs that have been matched
+            if 'match_score' in job and pd.notna(job['match_score']):
+                match_score = float(job['match_score'])
+                # Ensure the score is between 0 and 1
+                match_score = max(0.0, min(1.0, match_score))
+                st.progress(match_score)
+                st.write(f"Match Score: {match_score:.2f}")
 
             if job.get('source') != 'Adzuna':
                 if st.button("Apply", key=f"apply_{_}"):
