@@ -1,0 +1,13 @@
+plotly
+pandas
+streamlit
+sqlite3
+python
+sqlalchemy
+os
+requests
+spacy
+PyPDF2
+docx
+io
+re
