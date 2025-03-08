@@ -1,138 +1,43 @@
-from models.database import Job, Application, get_db
-from datetime import datetime
+# filepath: c:\Users\jbouc\Downloads\JobHunterPro\JobHunterPro\data\db_utils.py
+import sqlite3
 import pandas as pd
-from sqlalchemy.exc import OperationalError
-import time
 
-def retry_on_connection_error(max_retries=3, delay=1):
-    """Decorator to retry database operations on connection errors"""
-    def decorator(func):
-        def wrapper(*args, **kwargs):
-            retries = 0
-            while retries < max_retries:
-                try:
-                    return func(*args, **kwargs)
-                except OperationalError as e:
-                    if retries == max_retries - 1:
-                        raise
-                    retries += 1
-                    time.sleep(delay)
-            return func(*args, **kwargs)
-        return wrapper
-    return decorator
-
-@retry_on_connection_error()
 def init_mock_data():
-    """Initialize the database with mock data if it's empty"""
-    db = next(get_db())
+    # Connect to the database
+    conn = sqlite3.connect('c:\\Users\\jbouc\\Downloads\\JobHunterPro\\JobHunterPro\\.venv\\scripts\\jobhunterpro.db')
+    cursor = conn.cursor()
 
-    try:
-        # Check if data already exists
-        if db.query(Job).count() > 0:
-            return
+    # Insert mock data into the jobs table
+    cursor.execute('''
+    INSERT INTO jobs (title, company, location, salary_range, description, requirements, posted_date, status, source)
+    VALUES
+    ('Software Engineer', 'Tech Corp', 'San Francisco', '100000-120000', 'Develop software solutions', 'Python, SQL', '2025-03-01', 'External', 'Adzuna')
+    ''')
 
-        # Add mock jobs
-        mock_jobs = [
-            {
-                "title": "Senior Python Developer",
-                "company": "TechCorp",
-                "location": "Remote",
-                "salary_range": "120k-150k",
-                "description": "Looking for an experienced Python developer with strong backend skills and experience with web frameworks.",
-                "requirements": "Python, Django, PostgreSQL",
-                "posted_date": datetime.now(),
-                "status": "Open"
-            },
-            {
-                "title": "Data Scientist",
-                "company": "DataWise",
-                "location": "New York, NY",
-                "salary_range": "100k-130k",
-                "description": "Seeking a data scientist with ML expertise and experience in predictive modeling.",
-                "requirements": "Python, SQL, Machine Learning",
-                "posted_date": datetime.now(),
-                "status": "Open"
-            }
-        ]
+    # Commit the changes and close the connection
+    conn.commit()
+    conn.close()
 
-        created_jobs = []
-        for job_data in mock_jobs:
-            job = Job(**job_data)
-            db.add(job)
-            db.flush()  # Flush to get the job ID
-            created_jobs.append(job)
-
-        # Add mock applications
-        mock_applications = [
-            {
-                "job_id": created_jobs[0].id,
-                "status": "Applied",
-                "notes": "Application submitted via company website",
-                "application_date": datetime.now()
-            },
-            {
-                "job_id": created_jobs[1].id,
-                "status": "Interview Scheduled",
-                "notes": "First round interview scheduled",
-                "application_date": datetime.now()
-            }
-        ]
-
-        for app_data in mock_applications:
-            app = Application(**app_data)
-            db.add(app)
-
-        db.commit()
-        print("Mock data initialized successfully")
-    except Exception as e:
-        print(f"Error initializing mock data: {str(e)}")
-        db.rollback()
-        raise
-    finally:
-        db.close()
-
-@retry_on_connection_error()
 def get_jobs_df():
-    """Get all jobs as a pandas DataFrame"""
-    db = next(get_db())
-    try:
-        jobs = db.query(Job).all()
+    # Connect to the database
+    conn = sqlite3.connect('c:\\Users\\jbouc\\Downloads\\JobHunterPro\\JobHunterPro\\.venv\\scripts\\jobhunterpro.db')
 
-        jobs_data = []
-        for job in jobs:
-            jobs_data.append({
-                "id": job.id,
-                "title": job.title,
-                "company": job.company,
-                "location": job.location,
-                "salary_range": job.salary_range,
-                "description": job.description,
-                "requirements": job.requirements,
-                "posted_date": job.posted_date.strftime('%Y-%m-%d'),
-                "status": job.status
-            })
+    # Query the jobs table and load the data into a DataFrame
+    df = pd.read_sql_query('SELECT * FROM jobs', conn)
 
-        return pd.DataFrame(jobs_data) if jobs_data else pd.DataFrame()
-    finally:
-        db.close()
+    # Close the connection
+    conn.close()
 
-@retry_on_connection_error()
+    return df
+
 def get_applications_df():
-    """Get all applications as a pandas DataFrame"""
-    db = next(get_db())
-    try:
-        applications = db.query(Application).all()
+    # Connect to the database
+    conn = sqlite3.connect('c:\\Users\\jbouc\\Downloads\\JobHunterPro\\JobHunterPro\\.venv\\scripts\\jobhunterpro.db')
 
-        applications_data = []
-        for app in applications:
-            applications_data.append({
-                "id": app.id,
-                "job_id": app.job_id,
-                "application_date": app.application_date.strftime('%Y-%m-%d'),
-                "status": app.status,
-                "notes": app.notes
-            })
+    # Query the applications table and load the data into a DataFrame
+    df = pd.read_sql_query('SELECT * FROM applications', conn)
 
-        return pd.DataFrame(applications_data) if applications_data else pd.DataFrame()
-    finally:
-        db.close()
+    # Close the connection
+    conn.close()
+
+    return df

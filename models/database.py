@@ -6,7 +6,11 @@ from datetime import datetime
 from sqlalchemy.pool import NullPool
 
 # Get database URL from environment
-DATABASE_URL = os.getenv('DATABASE_URL')
+DATABASE_URL = os.getenv('postgresql://neondb_owner:npg_WmoJrxhRN1B3@ep-white-tooth-a564vxoz.us-east-2.aws.neon.tech/neondb?sslmode=require')
+
+# Ensure DATABASE_URL is set
+if DATABASE_URL is None:
+    raise ValueError("DATABASE_URL environment variable is not set")
 
 # Create database engine with SSL parameters and connection pooling disabled
 engine = create_engine(
